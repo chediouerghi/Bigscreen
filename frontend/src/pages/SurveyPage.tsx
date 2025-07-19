@@ -1,40 +1,73 @@
-import React from 'react';
-import Question from '../components/Question';
+import React, { useEffect, useState } from "react";
+import api from "../api";
+import Question from "../components/Question";
+import { type } from "os";
 
-import React, { useState, useEffect } from 'react';
-import api from '../api';
-import Question from '../components/Question';
+interface QuestionOption {
+  value: string;
+  label: string;
+}
 
-const SurveyPage: React.FC = () => {
-  const [questions, setQuestions] = useState([]);
+interface QuestionType {
+  id: number;
+  title: string;
+  body: string;
+  type: string;
+  options?: QuestionOption[];
+}
+
+function SurveyPage() {
+  const [questions, setQuestions] = useState<QuestionType[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchQuestions = async () => {
-      const response = await api.get('/questions');
-      setQuestions(response.data);
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.get("/questions");
+        setQuestions(response.data);
+      } catch (err: any) {
+        setError("Erreur lors du chargement des questions. Veuillez réessayer plus tard.");
+      } finally {
+        setLoading(false);
+      }
     };
-
     fetchQuestions();
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError(null);
+    setSuccess(null);
     const formData = new FormData(event.currentTarget);
     const data = Object.fromEntries(formData.entries());
-    await api.post('/survey', data);
+    try {
+      await api.post("/survey", data);
+      setSuccess("Merci pour votre participation !");
+    } catch (err: any) {
+      setError("Erreur lors de l'envoi du questionnaire. Veuillez réessayer.");
+    }
   };
 
   return (
-    <div>
+    <div className="survey-page">
       <h1>Bigscreen Survey</h1>
-      <form onSubmit={handleSubmit}>
-        {questions.map((question) => (
-          <Question key={question.id} question={question} />
-        ))}
-        <button type="submit">Submit</button>
-      </form>
+      {loading && <p>Chargement des questions...</p>}
+      {error && <div className="error-message">{error}</div>}
+      {success && <div className="success-message">{success}</div>}
+      {!loading && !error && (
+        <form onSubmit={handleSubmit}>
+          {questions.map((question: QuestionType) => (
+            <Question key={question.id} question={question} />
+          ))}
+          <button type="submit">Envoyer</button>
+        </form>
+      )}
     </div>
   );
-};
+}
 
 export default SurveyPage;
