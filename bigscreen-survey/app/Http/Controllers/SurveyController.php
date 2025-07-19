@@ -2,21 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SurveyService;
 use Illuminate\Http\Request;
 
 class SurveyController extends Controller
 {
-    public function store(Request $request)
+    protected $surveyService;
+
+    public function __construct(SurveyService $surveyService)
     {
-        // This is where the survey submission logic will go.
-        // For now, we will just return a simple message.
-        return 'Survey submitted successfully!';
+        $this->surveyService = $surveyService;
     }
 
-    public function show($token)
+    /**
+     * Display a listing of the active surveys.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
     {
-        // This is where the response page logic will go.
-        // For now, we will just return a simple message.
-        return "Showing responses for token: {$token}";
+        return $this->surveyService->getActiveSurveys();
     }
 }
